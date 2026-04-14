@@ -3,23 +3,124 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+
   body {
-    @apply bg-black text-white font-sans;
+    @apply min-h-screen bg-[#06070b] text-white antialiased font-sans;
+    background-image:
+      radial-gradient(circle at top left, rgba(139, 92, 246, 0.22), transparent 28%),
+      radial-gradient(circle at top right, rgba(163, 230, 53, 0.1), transparent 24%),
+      linear-gradient(180deg, #0a0a12 0%, #070811 55%, #05060c 100%);
+  }
+
+  #root {
+    @apply min-h-screen;
+  }
+
+  ::selection {
+    background: rgba(190, 242, 100, 0.28);
   }
 }
 
 :root {
   --violet: #7D39EB;
   --lime: #C6FF33;
+  --ink: #05060c;
+  --surface: rgba(15, 23, 42, 0.72);
+  --surface-border: rgba(255, 255, 255, 0.1);
 }
 
 @layer utilities {
+  .container-shell {
+    @apply mx-auto w-full max-w-7xl px-4 md:px-6;
+  }
+
   .glass-card {
     @apply bg-white/10 backdrop-blur-md border border-white/20 shadow-xl rounded-2xl;
   }
   
   .glass-card-hover {
     @apply transition-all duration-300 hover:bg-white/15 hover:border-white/30 hover:shadow-2xl hover:scale-[1.02];
+  }
+
+  .surface-card {
+    @apply rounded-[28px] border border-white/10 bg-slate-950/65 shadow-[0_24px_80px_rgba(0,0,0,0.42)] backdrop-blur-xl;
+  }
+
+  .surface-glass {
+    @apply bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))];
+  }
+
+  .section-title {
+    @apply text-3xl font-black tracking-[-0.04em] text-white md:text-4xl;
+  }
+
+  .section-copy {
+    @apply text-sm leading-7 md:text-base;
+    color: rgba(255, 255, 255, 0.62);
+  }
+
+  .eyebrow {
+    @apply text-[11px] font-black uppercase tracking-[0.34em];
+    color: rgba(255, 255, 255, 0.45);
+  }
+
+  .btn-base {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5 font-black transition duration-300 disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98];
+  }
+
+  .btn-primary {
+    @apply bg-[linear-gradient(135deg,#8b5cf6,#111827)] text-white shadow-[0_12px_28px_rgba(109,40,217,0.35)] hover:-translate-y-0.5 hover:shadow-[0_16px_34px_rgba(109,40,217,0.45)];
+  }
+
+  .btn-secondary {
+    @apply border text-white hover:bg-white/[0.09];
+    border-color: rgba(255, 255, 255, 0.12);
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+
+  .btn-ghost {
+    @apply bg-transparent hover:bg-white/[0.06] hover:text-white;
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  .btn-success {
+    @apply bg-[linear-gradient(135deg,#bef264,#1f2937)] text-black shadow-[0_12px_28px_rgba(190,242,100,0.25)] hover:-translate-y-0.5;
+  }
+
+  .badge-base {
+    @apply inline-flex items-center rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em];
+  }
+
+  .badge-default {
+    @apply border-white/10 bg-white/[0.05];
+    color: rgba(255, 255, 255, 0.65);
+  }
+
+  .badge-lime {
+    @apply border-lime-300/30 bg-lime-300/10 text-lime-300;
+  }
+
+  .badge-violet {
+    @apply border-violet-400/30 bg-violet-400/10 text-violet-300;
+  }
+
+  .badge-amber {
+    @apply border-amber-300/30 bg-amber-300/10 text-amber-200;
+  }
+
+  .badge-success {
+    @apply border-emerald-300/30 bg-emerald-300/10 text-emerald-200;
+  }
+
+  .badge-danger {
+    @apply border-rose-300/30 bg-rose-300/10 text-rose-200;
   }
 
   .text-violet { color: var(--violet); }
@@ -46,6 +147,26 @@
   background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0) 100%);
   background-size: 1000px 100%;
   animation: shimmer 2s infinite linear;
+}
+
+@keyframes vote-pop {
+  0% { transform: scale(0.92); opacity: 0.6; }
+  70% { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-vote-pop {
+  animation: vote-pop 380ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes settle-glow {
+  0% { box-shadow: 0 0 0 rgba(190,242,100,0); transform: scale(1); }
+  50% { box-shadow: 0 0 24px rgba(190,242,100,0.45); transform: scale(1.03); }
+  100% { box-shadow: 0 0 0 rgba(190,242,100,0); transform: scale(1); }
+}
+
+.animate-settle-glow {
+  animation: settle-glow 520ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Dark Map Filter */

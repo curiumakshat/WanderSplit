@@ -51,6 +51,10 @@ const insertSettlementStmt = db.prepare(`
 `);
 const clearSettlementsStmt = db.prepare('DELETE FROM settlements WHERE trip_id = ?');
 
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || '').trim());
+}
+
 function toPaise(amount) {
   return Math.round(Number(amount) * 100);
 }
@@ -223,6 +227,13 @@ router.post('/trips', (req, res) => {
     return res.status(400).json({ error: 'Name and destination are required' });
   }
 
+  if (members && Array.isArray(members)) {
+    const invalidMember = members.find((member) => !member?.name || !isValidEmail(member?.email));
+    if (invalidMember) {
+      return res.status(400).json({ error: 'Each member must include a name and valid email' });
+    }
+  }
+
   try {
     const insertTrip = db.prepare(`
       INSERT INTO trips (name, destination, start_date, end_date)
@@ -245,10 +256,20 @@ router.post('/trips', (req, res) => {
   }
 });
 
+router.get('/trips/:id/members', (req, res) => {
+  try {
+    const members = db.prepare('SELECT * FROM members WHERE trip_id = ? ORDER BY name COLLATE NOCASE').all(req.params.id);
+    res.json(members);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // POST /api/trips/:id/members - Add member to trip
 router.post('/trips/:id/members', (req, res) => {
   const { name, email } = req.body;
   if (!name) return res.status(400).json({ error: 'Name is required' });
+  if (!isValidEmail(email)) return res.status(400).json({ error: 'Valid email is required' });
 
   try {
     const result = db.prepare('INSERT INTO members (trip_id, name, email) VALUES (?, ?, ?)')
@@ -279,18 +300,23 @@ router.post('/trips/:id/votes', (req, res) => {
   }
 
   try {
-    // Check if vote already exists
+    const normalizedDestination = String(destination).trim();
+    const normalizedMemberName = String(member_name).trim();
+
     const existing = db.prepare('SELECT id FROM destination_votes WHERE trip_id = ? AND destination = ? AND member_name = ?')
-      .get(trip_id, destination, member_name);
+      .get(trip_id, normalizedDestination, normalizedMemberName);
 
     if (existing) {
       return res.status(400).json({ error: 'Already voted for this destination' });
     }
 
     const result = db.prepare('INSERT INTO destination_votes (trip_id, destination, member_name) VALUES (?, ?, ?)')
-      .run(trip_id, destination, member_name);
-    res.status(201).json({ id: result.lastInsertRowid, destination, member_name });
+      .run(trip_id, normalizedDestination, normalizedMemberName);
+    res.status(201).json({ id: result.lastInsertRowid, destination: normalizedDestination, member_name: normalizedMemberName });
   } catch (error) {
+    if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+      return res.status(400).json({ error: 'Already voted for this destination' });
+    }
     res.status(500).json({ error: error.message });
   }
 });
@@ -397,6 +423,148 @@ router.patch('/trips/:id/settlements/:sid', (req, res) => {
     });
   } catch (error) {
     return res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/trips/:id/expenses - Add a new expense
+router.post('/trips/:id/expenses', (req, res) => {
+  try {
+    const tripId = Number(req.params.id);
+    const { description, amount, paid_by_member_id, split_with, category, date } = req.body;
+
+    if (!description || amount === undefined || !paid_by_member_id || !split_with || !Array.isArray(split_with)) {
+      return res.status(400).json({
+        error: 'Missing required fields: description, amount, paid_by_member_id, split_with (array)',
+      });
+    }
+
+    const trip = db.prepare('SELECT id FROM trips WHERE id = ?').get(tripId);
+    if (!trip) {
+      return res.status(404).json({ error: 'Trip not found' });
+    }
+
+    const insertExpense = db.prepare(`
+      INSERT INTO expenses (trip_id, title, amount, paid_by_member_id, category, created_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+
+    const insertSplit = db.prepare(`
+      INSERT INTO expense_splits (expense_id, member_id, share_amount)
+      VALUES (?, ?, ?)
+    `);
+
+    const shareAmount = Number((amount / split_with.length).toFixed(2));
+
+    const result = insertExpense.run(
+      tripId,
+      description,
+      amount,
+      paid_by_member_id,
+      category || 'Other',
+      date || new Date().toISOString()
+    );
+
+    const expenseId = result.lastInsertRowid;
+
+    split_with.forEach((memberId) => {
+      insertSplit.run(expenseId, memberId, shareAmount);
+    });
+
+    // Recalculate settlements
+    ensureSettlements(tripId);
+
+    res.status(201).json({
+      id: expenseId,
+      trip_id: tripId,
+      description,
+      amount,
+      paid_by_member_id,
+      split_with,
+      category: category || 'Other',
+      date: date || new Date().toISOString().split('T')[0],
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/trips/:id/expenses - List all expenses for a trip
+router.get('/trips/:id/expenses', (req, res) => {
+  try {
+    const tripId = Number(req.params.id);
+
+    const expenses = db
+      .prepare(`
+        SELECT 
+          e.id,
+          e.title as description,
+          e.amount,
+          e.category,
+          e.paid_by_member_id,
+          e.created_at as date
+        FROM expenses e
+        WHERE e.trip_id = ?
+        ORDER BY e.created_at DESC
+      `)
+      .all(tripId);
+
+    // Get split_with for each expense
+    const expensesWithShares = expenses.map((exp) => {
+      const shares = db.prepare(`
+        SELECT member_id FROM expense_splits WHERE expense_id = ?
+      `).all(exp.id);
+      return {
+        ...exp,
+        split_with: shares.map((s) => s.member_id),
+      };
+    });
+
+    res.json(expensesWithShares);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/trips/:id/balances - Compute per-member balances
+router.get('/trips/:id/balances', (req, res) => {
+  try {
+    const tripId = Number(req.params.id);
+
+    const members = db.prepare('SELECT id, name FROM members WHERE trip_id = ? ORDER BY name COLLATE NOCASE').all(tripId);
+
+    const balances = new Map(members.map((m) => [m.id, 0]));
+
+    // Get all expenses
+    const expenses = db.prepare('SELECT id, amount, paid_by_member_id FROM expenses WHERE trip_id = ?').all(tripId);
+
+    expenses.forEach((expense) => {
+      balances.set(expense.paid_by_member_id, (balances.get(expense.paid_by_member_id) ?? 0) + toPaise(expense.amount));
+    });
+
+    // Subtract shares for each member
+    const shares = db
+      .prepare(`
+        SELECT es.member_id, SUM(es.share_amount) as total_share
+        FROM expense_splits es
+        JOIN expenses e ON e.id = es.expense_id
+        WHERE e.trip_id = ?
+        GROUP BY es.member_id
+      `)
+      .all(tripId);
+
+    shares.forEach((share) => {
+      balances.set(share.member_id, (balances.get(share.member_id) ?? 0) - toPaise(share.total_share));
+    });
+
+    const result = members.map((member) => ({
+      id: member.id,
+      name: member.name,
+      balance: toRupees(balances.get(member.id) ?? 0),
+    }));
+
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 

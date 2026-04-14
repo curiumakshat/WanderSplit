@@ -5,6 +5,7 @@ import { MapPin, Calendar, Users, LayoutDashboard, Map, Wallet, Scale } from 'lu
 import DestinationVoting from '../components/DestinationVoting';
 import ItineraryTab from '../components/ItineraryTab';
 import ExpensesTab from '../components/ExpensesTab';
+import SettleTab from '../components/SettleTab';
 
 function TripDashboard() {
   const { id } = useParams();
@@ -84,13 +85,17 @@ function TripDashboard() {
         <div className="flex border-b overflow-x-auto scrollbar-hide">
           {tabs.map((tab) => {
             const isActive = currentTab === tab.path || (tab.name === 'Plan' && currentTab === `/trip/${id}`);
+            const activeClass =
+              tab.name === 'Settle'
+                ? 'border-amber-600 bg-amber-50/70 text-amber-700'
+                : 'border-teal-600 bg-teal-50/30 text-teal-600';
             return (
               <Link
                 key={tab.name}
                 to={tab.path}
                 className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 text-sm font-bold transition-all border-b-2 whitespace-nowrap ${
                   isActive 
-                  ? 'border-teal-600 text-teal-600 bg-teal-50/30' 
+                  ? activeClass 
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                 }`}
               >
@@ -107,7 +112,7 @@ function TripDashboard() {
             <Route path="plan" element={<DestinationVoting tripId={id} members={trip.members} />} />
             <Route path="itinerary" element={<ItineraryTab tripId={trip.id} destination={trip.destination} />} />
             <Route path="expenses" element={<ExpensesTab tripId={id} />} />
-            <Route path="settle" element={<div className="text-center py-20 text-gray-400 font-medium italic">Settle content coming soon...</div>} />
+            <Route path="settle" element={<SettleTab tripId={trip.id} />} />
           </Routes>
         </div>
       </div>

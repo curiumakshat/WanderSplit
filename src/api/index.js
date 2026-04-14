@@ -233,9 +233,9 @@ router.post('/trips', (req, res) => {
     const tripId = result.lastInsertRowid;
 
     if (members && Array.isArray(members)) {
-      const insertMember = db.prepare('INSERT INTO members (trip_id, name) VALUES (?, ?)');
-      members.forEach(memberName => {
-        insertMember.run(tripId, memberName);
+      const insertMember = db.prepare('INSERT INTO members (trip_id, name, email) VALUES (?, ?, ?)');
+      members.forEach(member => {
+        insertMember.run(tripId, member.name, member.email);
       });
     }
 
@@ -272,13 +272,23 @@ router.get('/trips/:id/votes', (req, res) => {
 // POST /api/trips/:id/votes - Cast a vote
 router.post('/trips/:id/votes', (req, res) => {
   const { destination, member_name } = req.body;
+  const trip_id = req.params.id;
+
   if (!destination || !member_name) {
     return res.status(400).json({ error: 'Destination and member_name are required' });
   }
 
   try {
+    // Check if vote already exists
+    const existing = db.prepare('SELECT id FROM destination_votes WHERE trip_id = ? AND destination = ? AND member_name = ?')
+      .get(trip_id, destination, member_name);
+
+    if (existing) {
+      return res.status(400).json({ error: 'Already voted for this destination' });
+    }
+
     const result = db.prepare('INSERT INTO destination_votes (trip_id, destination, member_name) VALUES (?, ?, ?)')
-      .run(req.params.id, destination, member_name);
+      .run(trip_id, destination, member_name);
     res.status(201).json({ id: result.lastInsertRowid, destination, member_name });
   } catch (error) {
     res.status(500).json({ error: error.message });

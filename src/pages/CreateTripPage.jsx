@@ -9,15 +9,34 @@ function CreateTripPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [memberInput, setMemberInput] = useState('');
+  const [memberEmail, setMemberEmail] = useState('');
   const [members, setMembers] = useState([]);
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  const validateEmail = (email) => {
+    return String(email)
+      .toLowerCase()
+      .match(
+        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+      );
+  };
+
   const addMember = () => {
-    if (memberInput.trim() && !members.includes(memberInput.trim())) {
-      setMembers([...members, memberInput.trim()]);
-      setMemberInput('');
+    if (!memberInput.trim()) return;
+    if (!memberEmail.trim() || !validateEmail(memberEmail)) {
+      setError('Please provide a valid email for the member.');
+      return;
     }
+    if (members.find(m => m.email === memberEmail.trim())) {
+      setError('Member with this email already added.');
+      return;
+    }
+
+    setMembers([...members, { name: memberInput.trim(), email: memberEmail.trim() }]);
+    setMemberInput('');
+    setMemberEmail('');
+    setError('');
   };
 
   const removeMember = (index) => {
@@ -104,40 +123,51 @@ function CreateTripPage() {
 
         <div className="bg-gray-50 p-6 rounded-xl space-y-4">
           <label className="block text-sm font-semibold text-gray-700 mb-1">Add Members</label>
-          <div className="flex gap-2">
-            <input 
-              type="text" 
-              value={memberInput}
-              onChange={(e) => setMemberInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addMember())}
-              placeholder="Friend's Name"
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all shadow-sm bg-white"
-            />
+          <div className="flex flex-col gap-3">
+            <div className="flex gap-2">
+              <input 
+                type="text" 
+                value={memberInput}
+                onChange={(e) => setMemberInput(e.target.value)}
+                placeholder="Friend's Name"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all shadow-sm bg-white"
+              />
+              <input 
+                type="email" 
+                value={memberEmail}
+                onChange={(e) => setMemberEmail(e.target.value)}
+                placeholder="Email Address"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all shadow-sm bg-white"
+              />
+            </div>
             <button 
               type="button" 
               onClick={addMember}
-              className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors shadow-sm"
+              className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-sm w-full"
             >
               <UserPlus size={18} />
-              Add
+              Add Member
             </button>
           </div>
 
-          <div className="flex flex-wrap gap-2 pt-2">
+          <div className="flex flex-col gap-2 pt-2">
             {members.map((member, index) => (
-              <span 
+              <div 
                 key={index} 
-                className="bg-white px-3 py-1.5 rounded-full border border-teal-200 text-teal-800 flex items-center gap-2 text-sm font-medium shadow-sm"
+                className="bg-white px-4 py-2 rounded-lg border border-teal-200 text-teal-800 flex items-center justify-between text-sm font-medium shadow-sm"
               >
-                {member}
+                <div className="flex flex-col">
+                  <span>{member.name}</span>
+                  <span className="text-xs text-teal-600 opacity-70">{member.email}</span>
+                </div>
                 <button 
                   type="button" 
                   onClick={() => removeMember(index)}
                   className="text-teal-400 hover:text-teal-600 transition-colors"
                 >
-                  <X size={14} />
+                  <X size={16} />
                 </button>
-              </span>
+              </div>
             ))}
           </div>
         </div>

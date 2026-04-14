@@ -40,36 +40,38 @@ function TripDashboard() {
   const currentTab = location.pathname;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-10">
       {/* Header Shell */}
-      <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-3">
-            <h2 className="text-4xl font-extrabold text-gray-900 leading-tight">{trip.name}</h2>
-            <div className="flex flex-wrap gap-4 text-gray-600">
-              <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">
-                <MapPin size={18} className="text-teal-500" />
-                <span className="font-medium">{trip.destination}</span>
+      <div className="glass-card p-10 bg-gradient-to-br from-white/10 to-transparent">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-10">
+          <div className="space-y-6">
+            <h2 className="text-6xl font-black text-white leading-none tracking-tight">
+               {trip.name}
+            </h2>
+            <div className="flex flex-wrap gap-4">
+              <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-full">
+                <MapPin size={16} className="text-lime" />
+                <span className="font-black uppercase tracking-widest text-[10px]">{trip.destination}</span>
               </div>
               {trip.start_date && (
-                <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">
-                  <Calendar size={18} className="text-teal-500" />
-                  <span className="font-medium">{trip.start_date} - {trip.end_date || 'TBD'}</span>
+                <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-full">
+                  <Calendar size={16} className="text-violet" />
+                  <span className="font-black uppercase tracking-widest text-[10px]">{trip.start_date} - {trip.end_date || 'TBD'}</span>
                 </div>
               )}
             </div>
           </div>
           
-          <div className="flex flex-col items-start md:items-end gap-3">
-             <div className="flex items-center gap-2 text-gray-600 mb-1">
-                <Users size={18} className="text-teal-500" />
-                <span className="font-semibold">{trip.members?.length || 0} Members</span>
+          <div className="flex flex-col items-start md:items-end gap-4">
+             <div className="flex items-center gap-2 text-white/50 mb-2 font-black uppercase tracking-tighter text-sm">
+                <Users size={16} className="text-lime" />
+                <span>{trip.members?.length || 0} Explorers</span>
              </div>
-             <div className="flex -space-x-3 overflow-hidden">
+             <div className="flex -space-x-4">
                 {trip.members?.map((member, i) => (
                   <div 
                     key={i} 
-                    className="inline-block h-10 w-10 rounded-full ring-2 ring-white bg-teal-100 text-teal-700 flex items-center justify-center font-bold text-sm uppercase shadow-sm border border-teal-200"
+                    className="h-12 w-12 rounded-full ring-4 ring-black bg-violet text-white flex items-center justify-center font-black text-xs uppercase shadow-2xl border border-white/20 transition-transform hover:-translate-y-2 cursor-pointer"
                     title={member.name}
                   >
                     {member.name.charAt(0)}
@@ -81,22 +83,18 @@ function TripDashboard() {
       </div>
 
       {/* Tabs Shell */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="flex border-b overflow-x-auto scrollbar-hide">
+      <div className="space-y-8">
+        <div className="flex gap-4 p-1.5 glass-card bg-white/5 rounded-full overflow-hidden w-fit mx-auto">
           {tabs.map((tab) => {
             const isActive = currentTab === tab.path || (tab.name === 'Plan' && currentTab === `/trip/${id}`);
-            const activeClass =
-              tab.name === 'Settle'
-                ? 'border-amber-600 bg-amber-50/70 text-amber-700'
-                : 'border-teal-600 bg-teal-50/30 text-teal-600';
             return (
               <Link
                 key={tab.name}
                 to={tab.path}
-                className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 text-sm font-bold transition-all border-b-2 whitespace-nowrap ${
+                className={`flex items-center gap-2 px-8 py-3 rounded-full text-xs font-black uppercase tracking-widest transition-all ${
                   isActive 
-                  ? activeClass 
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                  ? 'bg-lime text-black shadow-[0_0_20px_rgba(198,255,51,0.4)]' 
+                  : 'text-white/40 hover:text-white hover:bg-white/5'
                 }`}
               >
                 {tab.icon}
@@ -106,7 +104,7 @@ function TripDashboard() {
           })}
         </div>
 
-        <div className="p-8 min-h-[400px]">
+        <div className="min-h-[400px]">
           <Routes>
             <Route index element={<DestinationVoting tripId={id} members={trip.members} />} />
             <Route path="plan" element={<DestinationVoting tripId={id} members={trip.members} />} />

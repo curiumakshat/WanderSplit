@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Trash2, Plus, X } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
+import Card from './ui/Card';
+import Button from './ui/Button';
+import Badge from './ui/Badge';
 
 const ExpensesTab = ({ tripId }) => {
   const [expenses, setExpenses] = useState([]);
@@ -15,7 +18,7 @@ const ExpensesTab = ({ tripId }) => {
     paid_by: '',
     split_with: [],
     category: 'Food',
-    date: new Date().toISOString().split('T')[0]
+    date: new Date().toISOString().split('T')[0],
   });
 
   useEffect(() => {
@@ -25,26 +28,22 @@ const ExpensesTab = ({ tripId }) => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch members
       const membersRes = await fetch(`http://localhost:3001/api/trips/${tripId}/members`);
       if (membersRes.ok) {
         const membersData = await membersRes.json();
         setMembers(membersData);
-        // Set default split_with to all members
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
-          split_with: membersData.map(m => m.id)
+          split_with: membersData.map((member) => member.id),
         }));
       }
 
-      // Fetch expenses
       const expensesRes = await fetch(`http://localhost:3001/api/trips/${tripId}/expenses`);
       if (expensesRes.ok) {
         const expensesData = await expensesRes.json();
         setExpenses(expensesData);
       }
 
-      // Fetch balances
       const balancesRes = await fetch(`http://localhost:3001/api/trips/${tripId}/balances`);
       if (balancesRes.ok) {
         const balancesData = await balancesRes.json();
@@ -60,24 +59,22 @@ const ExpensesTab = ({ tripId }) => {
 
   const handleFormChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handleSplitWithChange = (memberId) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      split_with: prev.split_with.includes(memberId)
-        ? prev.split_with.filter(id => id !== memberId)
-        : [...prev.split_with, memberId]
+      split_with: prev.split_with.includes(memberId) ? prev.split_with.filter((id) => id !== memberId) : [...prev.split_with, memberId],
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.description || !formData.amount || !formData.paid_by || formData.split_with.length === 0) {
       setError('Please fill all required fields');
       return;
@@ -90,11 +87,11 @@ const ExpensesTab = ({ tripId }) => {
         body: JSON.stringify({
           description: formData.description,
           amount: parseFloat(formData.amount),
-          paid_by: parseInt(formData.paid_by),
-          split_with: formData.split_with.map(id => parseInt(id)),
+          paid_by_member_id: parseInt(formData.paid_by),
+          split_with: formData.split_with.map((id) => parseInt(id)),
           category: formData.category,
-          date: formData.date
-        })
+          date: formData.date,
+        }),
       });
 
       if (response.ok) {
@@ -103,9 +100,9 @@ const ExpensesTab = ({ tripId }) => {
           description: '',
           amount: '',
           paid_by: '',
-          split_with: members.map(m => m.id),
+          split_with: members.map((member) => member.id),
           category: 'Food',
-          date: new Date().toISOString().split('T')[0]
+          date: new Date().toISOString().split('T')[0],
         });
         fetchData();
       } else {
@@ -118,100 +115,70 @@ const ExpensesTab = ({ tripId }) => {
     }
   };
 
-  const totalSpend = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+  const totalSpend = expenses.reduce((sum, expense) => sum + expense.amount, 0);
 
-  const categoryTotals = expenses.reduce((acc, exp) => {
-    acc[exp.category] = (acc[exp.category] || 0) + exp.amount;
+  const categoryTotals = expenses.reduce((acc, expense) => {
+    acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
     return acc;
   }, {});
 
   const getMemberName = (id) => {
-    const member = members.find(m => m.id === id);
+    const member = members.find((item) => item.id === id);
     return member ? member.name : `Member ${id}`;
   };
 
-  const getCategoryColor = (category) => {
-    const colors = {
-      'Food': 'bg-orange-100 text-orange-700',
-      'Transport': 'bg-blue-100 text-blue-700',
-      'Stay': 'bg-indigo-100 text-indigo-700',
-      'Activities': 'bg-pink-100 text-pink-700',
-      'Other': 'bg-gray-100 text-gray-700'
-    };
-    return colors[category] || colors['Other'];
-  };
+  const inputClass = 'w-full rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3 text-white outline-none transition focus:border-violet-400/50';
 
   if (loading) {
-    return <div className="flex justify-center items-center h-96"><div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-orange-500"></div></div>;
+    return (
+      <div className="flex h-96 items-center justify-center">
+        <div className="h-12 w-12 animate-spin rounded-full border-b-4 border-t-4 border-violet-400"></div>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6 p-4">
-      {error && (
-        <div className="bg-red-50 text-red-600 p-4 rounded-lg flex justify-between items-center">
+    <div className="space-y-6">
+      {error ? (
+        <div className="flex items-center justify-between rounded-2xl border border-rose-300/20 bg-rose-300/10 p-4 text-rose-200">
           <span>{error}</span>
-          <button onClick={() => setError(null)}><X size={20} /></button>
+          <button onClick={() => setError(null)}>
+            <X size={20} />
+          </button>
         </div>
-      )}
+      ) : null}
 
-      {/* Total Trip Spend Summary Card */}
-      <div className="bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl shadow-lg p-8 text-white">
-        <p className="text-orange-100 text-sm font-semibold uppercase tracking-wider mb-2">Total Trip Spend</p>
-        <h2 className="text-5xl font-bold mb-2">₹{totalSpend.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h2>
-        <p className="text-orange-100">{expenses.length} expenses tracked</p>
-      </div>
+      <Card variant="gradient" className="p-8">
+        <p className="eyebrow">Expenses</p>
+        <h2 className="mt-3 text-5xl font-black tracking-[-0.05em] text-white">
+          ₹{totalSpend.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        </h2>
+        <p className="mt-2 text-sm text-white/55">{expenses.length} expenses tracked</p>
+      </Card>
 
-      {/* Add Expense Button */}
-      <button
-        onClick={() => setShowForm(!showForm)}
-        className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all transform hover:scale-105 shadow-md"
-      >
+      <Button onClick={() => setShowForm(!showForm)} className="w-full justify-center rounded-2xl py-3 text-xs uppercase tracking-[0.24em]">
         <Plus size={20} />
         Add Expense
-      </button>
+      </Button>
 
-      {/* Add Expense Form */}
-      {showForm && (
-        <div className="bg-white border-2 border-orange-200 rounded-xl p-6 shadow-lg">
-          <h3 className="text-xl font-bold text-gray-800 mb-4">Add New Expense</h3>
+      {showForm ? (
+        <Card className="p-6">
+          <h3 className="mb-4 text-xl font-black tracking-[-0.03em] text-white">Add New Expense</h3>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Description *</label>
-              <input
-                type="text"
-                name="description"
-                value={formData.description}
-                onChange={handleFormChange}
-                placeholder="e.g., Dinner at beachfront restaurant"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                required
-              />
+              <label className="mb-2 block text-sm font-semibold text-white/70">Description *</label>
+              <input type="text" name="description" value={formData.description} onChange={handleFormChange} placeholder="e.g., Dinner at beachfront restaurant" className={inputClass} required />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Amount (₹) *</label>
-                <input
-                  type="number"
-                  name="amount"
-                  value={formData.amount}
-                  onChange={handleFormChange}
-                  placeholder="0.00"
-                  step="0.01"
-                  min="0"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                  required
-                />
+                <label className="mb-2 block text-sm font-semibold text-white/70">Amount (₹) *</label>
+                <input type="number" name="amount" value={formData.amount} onChange={handleFormChange} placeholder="0.00" step="0.01" min="0" className={inputClass} required />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Category</label>
-                <select
-                  name="category"
-                  value={formData.category}
-                  onChange={handleFormChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                >
+                <label className="mb-2 block text-sm font-semibold text-white/70">Category</label>
+                <select name="category" value={formData.category} onChange={handleFormChange} className={inputClass}>
                   <option>Food</option>
                   <option>Transport</option>
                   <option>Stay</option>
@@ -222,142 +189,120 @@ const ExpensesTab = ({ tripId }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Paid By *</label>
-              <select
-                name="paid_by"
-                value={formData.paid_by}
-                onChange={handleFormChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                required
-              >
+              <label className="mb-2 block text-sm font-semibold text-white/70">Paid By *</label>
+              <select name="paid_by" value={formData.paid_by} onChange={handleFormChange} className={inputClass} required>
                 <option value="">Select member</option>
-                {members.map(member => (
-                  <option key={member.id} value={member.id}>{member.name}</option>
+                {members.map((member) => (
+                  <option key={member.id} value={member.id}>
+                    {member.name}
+                  </option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-3">Split With *</label>
+              <label className="mb-3 block text-sm font-semibold text-white/70">Split With *</label>
               <div className="space-y-2">
-                {members.map(member => (
-                  <label key={member.id} className="flex items-center gap-3 cursor-pointer">
+                {members.map((member) => (
+                  <label key={member.id} className="flex cursor-pointer items-center gap-3 text-white/80">
                     <input
                       type="checkbox"
                       checked={formData.split_with.includes(member.id)}
                       onChange={() => handleSplitWithChange(member.id)}
-                      className="w-4 h-4 rounded accent-orange-500"
+                      className="h-4 w-4 rounded accent-lime-300"
                     />
-                    <span className="text-gray-700">{member.name}</span>
+                    <span>{member.name}</span>
                   </label>
                 ))}
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Date</label>
-              <input
-                type="date"
-                name="date"
-                value={formData.date}
-                onChange={handleFormChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-              />
+              <label className="mb-2 block text-sm font-semibold text-white/70">Date</label>
+              <input type="date" name="date" value={formData.date} onChange={handleFormChange} className={inputClass} />
             </div>
 
             <div className="flex gap-3 pt-4">
-              <button
-                type="submit"
-                className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 rounded-lg transition-all"
-              >
+              <Button type="submit" className="flex-1 justify-center rounded-2xl py-3 text-xs uppercase tracking-[0.24em]">
                 Add Expense
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowForm(false)}
-                className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 rounded-lg transition-all"
-              >
+              </Button>
+              <Button type="button" onClick={() => setShowForm(false)} variant="ghost" className="flex-1 justify-center rounded-2xl py-3 text-xs uppercase tracking-[0.24em]">
                 Cancel
-              </button>
+              </Button>
             </div>
           </form>
-        </div>
-      )}
+        </Card>
+      ) : null}
 
-      {/* Expense List */}
       <div className="space-y-3">
-        <h3 className="text-lg font-bold text-gray-800">Expenses</h3>
+        <h3 className="text-lg font-bold text-white">Expenses</h3>
         {expenses.length === 0 ? (
-          <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
-            <p className="text-gray-500">No expenses yet. Add one to get started!</p>
-          </div>
+          <Card className="border-dashed py-12 text-center text-white/45">No expenses yet. Add one to get started.</Card>
         ) : (
-          expenses.map(expense => {
-            const shareWith = expense.split_with.map(id => getMemberName(id)).join(', ');
+          expenses.map((expense) => {
+            const shareWith = expense.split_with.map((id) => getMemberName(id)).join(', ');
             return (
-              <div key={expense.id} className="bg-white border border-orange-100 rounded-lg p-4 hover:shadow-md transition-shadow">
+              <Card key={expense.id} className="p-5">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h4 className="font-semibold text-gray-800">{expense.description}</h4>
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${getCategoryColor(expense.category)}`}>
-                        {expense.category}
-                      </span>
+                    <div className="mb-2 flex items-center gap-3">
+                      <h4 className="font-semibold text-white">{expense.description}</h4>
+                      <Badge variant="amber">{expense.category}</Badge>
                     </div>
-                    <p className="text-sm text-gray-600">
-                      Paid by <span className="font-semibold">{getMemberName(expense.paid_by)}</span>, split with {shareWith}
+                    <p className="text-sm text-white/60">
+                      Paid by <span className="font-semibold">{getMemberName(expense.paid_by_member_id ?? expense.paid_by)}</span>, split with {shareWith}
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">{new Date(expense.date).toLocaleDateString()}</p>
+                    <p className="mt-1 text-xs text-white/35">{new Date(expense.date).toLocaleDateString()}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl font-bold text-orange-600">₹{expense.amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    <p className="text-2xl font-bold text-lime-300">
+                      ₹{expense.amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </p>
                   </div>
                 </div>
-              </div>
+              </Card>
             );
           })
         )}
       </div>
 
-      {/* Category Totals */}
-      {Object.keys(categoryTotals).length > 0 && (
-        <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-xl p-6">
-          <h3 className="text-lg font-bold text-gray-800 mb-4">Category Breakdown</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {Object.keys(categoryTotals).length > 0 ? (
+        <Card className="p-6">
+          <h3 className="mb-4 text-lg font-bold text-white">Category Breakdown</h3>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             {Object.entries(categoryTotals).map(([category, total]) => (
-              <div key={category} className={`${getCategoryColor(category)} p-4 rounded-lg text-center`}>
-                <p className="text-sm font-semibold opacity-75">{category}</p>
-                <p className="text-xl font-bold">₹{total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+              <div key={category} className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-center">
+                <p className="text-sm font-semibold text-white/55">{category}</p>
+                <p className="text-xl font-bold text-white">
+                  ₹{total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
               </div>
             ))}
           </div>
-        </div>
-      )}
+        </Card>
+      ) : null}
 
-      {/* Balance Summary */}
-      {balances.length > 0 && (
-        <div className="bg-white border-2 border-orange-200 rounded-xl p-6 shadow-md">
-          <h3 className="text-lg font-bold text-gray-800 mb-4">Settlement Summary</h3>
+      {balances.length > 0 ? (
+        <Card className="p-6">
+          <h3 className="mb-4 text-lg font-bold text-white">Balance Summary</h3>
           <div className="space-y-3">
-            {balances.map(balance => {
+            {balances.map((balance) => {
               const isCreditor = balance.balance > 0;
               return (
-                <div key={balance.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <p className="font-semibold text-gray-800">{balance.name}</p>
-                  <div className={`text-right ${isCreditor ? 'text-green-600' : 'text-red-600'}`}>
+                <div key={balance.id} className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                  <p className="font-semibold text-white">{balance.name}</p>
+                  <div className={`text-right ${isCreditor ? 'text-lime-300' : 'text-rose-300'}`}>
                     <p className="text-lg font-bold">
                       ₹{Math.abs(balance.balance).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </p>
-                    <p className="text-xs font-semibold">
-                      {isCreditor ? '💚 Gets back' : '💔 Owes'}
-                    </p>
+                    <p className="text-xs font-semibold">{isCreditor ? 'Gets back' : 'Owes'}</p>
                   </div>
                 </div>
               );
             })}
           </div>
-        </div>
-      )}
+        </Card>
+      ) : null}
     </div>
   );
 };

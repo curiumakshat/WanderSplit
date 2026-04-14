@@ -76,6 +76,21 @@ db.exec(`
     FOREIGN KEY (from_member) REFERENCES members (id) ON DELETE CASCADE,
     FOREIGN KEY (to_member) REFERENCES members (id) ON DELETE CASCADE
   );
+
+`);
+
+db.exec(`
+  DELETE FROM destination_votes
+  WHERE id NOT IN (
+    SELECT MIN(id)
+    FROM destination_votes
+    GROUP BY trip_id, destination, member_name
+  );
+`);
+
+db.exec(`
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_destination_votes_unique
+  ON destination_votes (trip_id, destination, member_name);
 `);
 
 const tripCount = db.prepare('SELECT COUNT(*) AS count FROM trips').get().count;

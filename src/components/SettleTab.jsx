@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
+import Card from './ui/Card';
+import Button from './ui/Button';
+import Badge from './ui/Badge';
 
 function formatCurrency(amount) {
   return new Intl.NumberFormat('en-IN', {
@@ -9,30 +12,18 @@ function formatCurrency(amount) {
   }).format(amount);
 }
 
-function SummaryCard({ label, value, accentClass }) {
-  return (
-    <div className="relative overflow-hidden rounded-[1.75rem] border border-amber-200/70 bg-white/80 p-5 shadow-sm shadow-amber-900/5 backdrop-blur">
-      <div className={`mb-4 h-1.5 w-16 rounded-full ${accentClass}`} />
-      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-700/70">{label}</p>
-      <p className="mt-3 text-2xl font-black tracking-tight text-stone-900">{value}</p>
-    </div>
-  );
-}
-
 function ConfettiBurst() {
   const pieces = useMemo(
     () =>
-      Array.from({ length: 30 }, (_, index) => ({
+      Array.from({ length: 36 }, (_, index) => ({
         id: index,
-        left: `${(index * 11) % 100}%`,
-        delay: `${(index % 6) * 120}ms`,
-        duration: `${2400 + (index % 4) * 260}ms`,
+        left: `${(index * 9) % 100}%`,
+        delay: `${(index % 7) * 110}ms`,
+        duration: `${2200 + (index % 5) * 200}ms`,
         color:
-          index % 3 === 0
-            ? 'linear-gradient(180deg, #fcd34d, #d97706)'
-            : index % 3 === 1
-              ? 'linear-gradient(180deg, #fde68a, #f59e0b)'
-              : 'linear-gradient(180deg, #fdba74, #c2410c)',
+          index % 2 === 0
+            ? 'linear-gradient(180deg, #a855f7, #0f172a)'
+            : 'linear-gradient(180deg, #bef264, #111827)',
       })),
     []
   );
@@ -55,11 +46,21 @@ function ConfettiBurst() {
   );
 }
 
+function SummaryCard({ label, value }) {
+  return (
+    <div className="rounded-[24px] border border-white/10 bg-white/[0.05] p-5">
+      <p className="text-xs font-black uppercase tracking-[0.26em] text-white/45">{label}</p>
+      <p className="mt-3 text-2xl font-black tracking-[-0.04em] text-white">{value}</p>
+    </div>
+  );
+}
+
 function SettleTab({ tripId }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [pendingIds, setPendingIds] = useState([]);
+  const [lastToggledId, setLastToggledId] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -70,7 +71,6 @@ function SettleTab({ tripId }) {
 
       try {
         const response = await axios.get(`http://localhost:3001/api/trips/${tripId}/settlements`);
-
         if (active) {
           setData(response.data);
         }
@@ -92,6 +92,15 @@ function SettleTab({ tripId }) {
     };
   }, [tripId]);
 
+  useEffect(() => {
+    if (!lastToggledId) {
+      return undefined;
+    }
+
+    const timer = window.setTimeout(() => setLastToggledId(null), 520);
+    return () => window.clearTimeout(timer);
+  }, [lastToggledId]);
+
   async function handleToggle(settlementId, isSettled) {
     setPendingIds((current) => [...current, settlementId]);
     setError('');
@@ -101,6 +110,7 @@ function SettleTab({ tripId }) {
         isSettled: !isSettled,
       });
 
+      setLastToggledId(settlementId);
       setData((current) => {
         if (!current) {
           return current;
@@ -123,19 +133,19 @@ function SettleTab({ tripId }) {
 
   if (loading) {
     return (
-      <div className="rounded-[2rem] border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-orange-50 p-10 text-center">
-        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-700">Settle</p>
-        <h3 className="mt-4 text-3xl font-black tracking-tight text-stone-900">Building the payout map...</h3>
-      </div>
+      <Card variant="gradient" className="p-12 text-center">
+        <p className="eyebrow">Settle</p>
+        <h3 className="mt-4 text-3xl font-black tracking-[-0.04em] text-white">Building the payout map...</h3>
+      </Card>
     );
   }
 
   if (error || !data) {
     return (
-      <div className="rounded-[2rem] border border-red-200 bg-red-50 p-8 text-center text-red-700">
+      <Card className="border-rose-400/20 bg-rose-300/10 p-8 text-center text-rose-200">
         <h3 className="text-2xl font-black tracking-tight">Could not load settlements</h3>
         <p className="mt-3 text-sm font-medium">{error || 'Unknown error'}</p>
-      </div>
+      </Card>
     );
   }
 
@@ -144,116 +154,101 @@ function SettleTab({ tripId }) {
 
   return (
     <div className="space-y-6">
-      <section className="relative overflow-hidden rounded-[2rem] border border-amber-200/80 bg-[radial-gradient(circle_at_top_right,_rgba(251,191,36,0.22),_transparent_30%),linear-gradient(135deg,rgba(255,251,235,0.98),rgba(254,243,199,0.88))] p-8 shadow-[0_30px_80px_rgba(120,53,15,0.10)]">
+      <Card variant="gradient" className="overflow-hidden p-8">
         <div className="max-w-2xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-amber-700">Emotional Payoff</p>
-          <h2 className="mt-3 font-serif text-4xl font-black leading-tight text-stone-900 md:text-5xl">
-            Shortest path to zero balances.
+          <p className="eyebrow">Emotional Payoff</p>
+          <h2 className="mt-3 text-4xl font-black leading-tight tracking-[-0.05em] text-white md:text-5xl">
+            The shortest path to zero balances.
           </h2>
-          <p className="mt-4 max-w-xl text-sm leading-7 text-stone-700 md:text-base">
-            The trip is done. These are the fewest transfers needed to clear every balance,
-            generated by matching the largest debtor with the largest creditor until everyone lands at zero.
+          <p className="mt-4 max-w-xl text-sm leading-7 text-white/65 md:text-base">
+            Greedy cash flow matches the largest debtor with the largest creditor until every balance lands at zero.
           </p>
         </div>
 
         <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <SummaryCard label="Total Spend" value={formatCurrency(summary.totalSpend)} accentClass="bg-gradient-to-r from-amber-400 to-yellow-300" />
-          <SummaryCard label="Expenses" value={summary.expenseCount} accentClass="bg-gradient-to-r from-yellow-500 to-amber-300" />
-          <SummaryCard label="Top Category" value={summary.mostExpensiveCategory} accentClass="bg-gradient-to-r from-orange-500 to-amber-300" />
-          <SummaryCard label="People" value={summary.peopleCount} accentClass="bg-gradient-to-r from-amber-700 to-yellow-400" />
+          <SummaryCard label="Total Spend" value={formatCurrency(summary.totalSpend)} />
+          <SummaryCard label="Expenses" value={summary.expenseCount} />
+          <SummaryCard label="Top Category" value={summary.mostExpensiveCategory} />
+          <SummaryCard label="People" value={summary.peopleCount} />
         </div>
-      </section>
+      </Card>
 
-      <section className="rounded-[2rem] border border-amber-200/80 bg-white/90 p-8 shadow-sm shadow-amber-900/5">
-        <div className="flex flex-col gap-4 border-b border-amber-100 pb-6 md:flex-row md:items-end md:justify-between">
+      <Card className="p-8">
+        <div className="flex flex-col gap-4 border-b border-white/10 pb-6 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-700">Minimum Cash Flow</p>
-            <h3 className="mt-2 text-3xl font-black tracking-tight text-stone-900">Settlement cards</h3>
-            <p className="mt-3 max-w-xl text-sm leading-7 text-stone-600">
-              Toggle each transfer as it is paid. Once every card is settled, the trip closes cleanly.
+            <p className="eyebrow">Minimum Cash Flow</p>
+            <h3 className="mt-2 text-3xl font-black tracking-[-0.04em] text-white">Settlement cards</h3>
+            <p className="mt-3 max-w-xl text-sm leading-7 text-white/60">
+              Mark each payment as it clears. Confetti only triggers once every transfer is settled.
             </p>
           </div>
-          <div className={`inline-flex items-center rounded-full px-4 py-2 text-sm font-bold ${
-            allSettled ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-          }`}>
-            {allSettled ? 'All clear' : `${openCount} remaining`}
-          </div>
+          <Badge variant={allSettled ? 'success' : 'violet'}>{allSettled ? 'All Clear' : `${openCount} Remaining`}</Badge>
         </div>
 
         {settlements.length === 0 ? (
-          <div className="rounded-[1.75rem] border border-dashed border-amber-200 bg-amber-50/60 p-10 text-center">
-            <h4 className="text-2xl font-black text-stone-900">No settlements needed</h4>
-            <p className="mt-3 text-sm text-stone-600">Everyone is already square for this trip.</p>
-          </div>
+          <Card className="mt-6 border-dashed p-10 text-center">
+            <h4 className="text-2xl font-black text-white">No settlements needed</h4>
+            <p className="mt-3 text-sm text-white/55">Everyone is already square for this trip.</p>
+          </Card>
         ) : (
           <div className="mt-6 grid gap-4">
             {settlements.map((settlement) => {
               const isPending = pendingIds.includes(settlement.id);
+              const isAnimated = lastToggledId === settlement.id;
 
               return (
                 <article
                   key={settlement.id}
-                  className={`rounded-[1.75rem] border p-5 transition duration-200 ${
+                  className={`rounded-[28px] border p-5 transition duration-300 ${
                     settlement.isSettled
-                      ? 'border-emerald-200 bg-emerald-50/70 opacity-80'
-                      : 'border-amber-200 bg-gradient-to-r from-white to-amber-50/80 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber-900/5'
-                  }`}
+                      ? 'border-lime-300/25 bg-[linear-gradient(135deg,rgba(190,242,100,0.12),rgba(15,23,42,0.88))]'
+                      : 'border-violet-400/20 bg-[linear-gradient(135deg,rgba(124,58,237,0.25),rgba(2,6,23,0.95))] hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(124,58,237,0.18)]'
+                  } ${isAnimated ? 'animate-settle-glow' : ''}`}
                 >
                   <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
                     <div>
-                      <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-700/80">
-                        Settlement #{settlement.id}
-                      </p>
-                      <h4 className="mt-3 text-2xl font-black tracking-tight text-stone-900">
+                      <p className="text-xs font-black uppercase tracking-[0.22em] text-white/45">Settlement #{settlement.id}</p>
+                      <h4 className="mt-3 text-2xl font-black tracking-[-0.04em] text-white">
                         {settlement.fromMember.name} pays {settlement.toMember.name} {formatCurrency(settlement.amount)}
                       </h4>
-                      <p className="mt-3 max-w-2xl text-sm leading-7 text-stone-600">
-                        Greedy matching paired the largest debtor with the largest creditor to minimize the number of transfers.
+                      <p className="mt-3 max-w-2xl text-sm leading-7 text-white/58">
+                        This transfer comes from the minimum-cash-flow pass, so you get the smallest clean set of payouts.
                       </p>
                     </div>
 
-                    <button
+                    <Button
                       type="button"
                       disabled={isPending}
                       onClick={() => handleToggle(settlement.id, settlement.isSettled)}
-                      className={`inline-flex items-center justify-center gap-3 rounded-full px-5 py-3 text-sm font-bold transition ${
-                        settlement.isSettled
-                          ? 'bg-emerald-700 text-white hover:bg-emerald-800'
-                          : 'bg-stone-900 text-amber-50 hover:bg-stone-800'
-                      } disabled:cursor-progress disabled:opacity-70`}
+                      variant={settlement.isSettled ? 'success' : 'primary'}
+                      className="justify-center rounded-full px-5 py-3 text-xs uppercase tracking-[0.24em]"
                     >
-                      <span
-                        className={`relative h-7 w-12 rounded-full ${
-                          settlement.isSettled ? 'bg-emerald-200/40' : 'bg-white/20'
-                        }`}
-                      >
+                      <span className={`relative h-7 w-12 rounded-full ${settlement.isSettled ? 'bg-black/25' : 'bg-white/12'}`}>
                         <span
-                          className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-transform ${
+                          className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-transform duration-300 ${
                             settlement.isSettled ? 'translate-x-6' : 'translate-x-1'
                           }`}
                         />
                       </span>
-                      <span>{settlement.isSettled ? 'Mark as unsettled' : 'Mark as settled'}</span>
-                    </button>
+                      <span>{settlement.isSettled ? 'Mark Unsettled' : 'Mark Settled'}</span>
+                    </Button>
                   </div>
                 </article>
               );
             })}
           </div>
         )}
-      </section>
+      </Card>
 
       {allSettled ? (
-        <section className="relative overflow-hidden rounded-[2rem] border border-amber-200 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-100 px-8 py-12 text-center shadow-[0_24px_60px_rgba(180,83,9,0.10)]">
+        <Card variant="gradient" className="relative overflow-hidden px-8 py-14 text-center">
           <ConfettiBurst />
-          <p className="relative text-xs font-semibold uppercase tracking-[0.26em] text-amber-700">Complete</p>
-          <h3 className="relative mt-4 font-serif text-4xl font-black tracking-tight text-stone-900">
-            All settled up!
-          </h3>
-          <p className="relative mx-auto mt-4 max-w-xl text-sm leading-7 text-stone-700 md:text-base">
-            Every transfer is marked settled. The books are closed and the trip ends on a clean note.
+          <p className="relative eyebrow">Celebration</p>
+          <h3 className="relative mt-4 text-5xl font-black tracking-[-0.06em] text-white">Trip Settled 🎉</h3>
+          <p className="relative mx-auto mt-4 max-w-xl text-sm leading-7 text-white/65 md:text-base">
+            Every transfer is settled. The books are closed and the trip ends on a clean note.
           </p>
-        </section>
+        </Card>
       ) : null}
     </div>
   );

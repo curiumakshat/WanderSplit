@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { PlusCircle, MapPin, Calendar, Plane, ArrowRight } from 'lucide-react';
+import Card from '../components/ui/Card';
+import Button from '../components/ui/Button';
+import Badge from '../components/ui/Badge';
 
 function HomePage() {
   const [trips, setTrips] = useState([]);
@@ -22,74 +25,97 @@ function HomePage() {
   }, []);
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="flex justify-between items-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-800">My Trips</h2>
-        <Link 
-          to="/create" 
-          className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors shadow-sm"
-        >
-          <PlusCircle size={20} />
-          Create New Trip
-        </Link>
+    <div className="mx-auto max-w-6xl space-y-10">
+      <Card variant="gradient" className="overflow-hidden p-8 md:p-10">
+        <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+          <div className="max-w-2xl space-y-4">
+            <p className="eyebrow">Travel Control Room</p>
+            <h2 className="section-title">Plan trips, vote fast, split cleanly.</h2>
+            <p className="section-copy">
+              WanderSplit keeps itinerary decisions, group expenses, and final settlements in one polished flow.
+            </p>
+          </div>
+          <Link to="/create">
+            <Button className="px-6 py-3 text-xs uppercase tracking-[0.24em]">
+              <PlusCircle size={18} />
+              Create New Trip
+            </Button>
+          </Link>
+        </div>
+      </Card>
+
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="eyebrow">My Trips</p>
+          <h3 className="text-2xl font-black tracking-[-0.04em] text-white">Active adventures</h3>
+        </div>
+        <Badge variant="violet">{trips.length} Trips</Badge>
       </div>
 
       {loading ? (
-        <div className="text-center py-10">Loading trips...</div>
+        <Card className="p-12 text-center">
+          <p className="eyebrow">Loading</p>
+          <p className="mt-4 text-lg font-bold text-white/80">Syncing your trip library...</p>
+        </Card>
       ) : trips.length === 0 ? (
-        <div className="text-center py-20 bg-white rounded-xl border-2 border-dashed border-gray-200">
-          <p className="text-gray-500 mb-4 text-lg">No trips planned yet.</p>
-          <Link to="/create" className="text-teal-600 font-semibold hover:underline">
-            Start planning your first adventure!
+        <Card className="border-dashed p-16 text-center">
+          <p className="text-lg font-bold text-white/70">No trips planned yet.</p>
+          <Link to="/create" className="mt-3 inline-block text-sm font-semibold text-lime-300 hover:underline">
+            Start planning your first adventure
           </Link>
-        </div>
+        </Card>
       ) : (
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           {trips.map((trip) => (
-            <Link 
-              key={trip.id} 
-              to={`/trip/${trip.id}`}
-              className="relative group bg-white/40 backdrop-blur-md p-8 rounded-3xl border border-white/40 shadow-[0_8px_32px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_32px_rgba(20,184,166,0.15)] transition-all duration-500 overflow-hidden hover:-translate-y-1"
-            >
-               {/* Decorative Gradient Background */}
-              <div className="absolute -top-24 -right-24 w-48 h-48 bg-teal-500/10 rounded-full blur-3xl group-hover:bg-teal-500/20 transition-all duration-500"></div>
-              
-              <div className="relative z-10">
-                <div className="flex justify-between items-start mb-6">
-                  <div className="p-3 bg-white/60 rounded-2xl shadow-sm border border-white/50 group-hover:scale-110 transition-transform">
-                    <Plane size={24} className="text-teal-600" />
-                  </div>
-                </div>
+            <Link key={trip.id} to={`/trip/${trip.id}`} className="group">
+              <Card variant="glass" className="relative overflow-hidden p-8 transition duration-500 group-hover:-translate-y-1 group-hover:border-violet-400/40 group-hover:shadow-[0_18px_60px_rgba(139,92,246,0.16)]">
+                <div className="absolute -right-16 -top-16 h-40 w-40 rounded-full bg-violet-500/15 blur-3xl transition duration-500 group-hover:bg-lime-300/10" />
 
-                <h3 className="text-2xl font-black mb-2 text-slate-900 group-hover:text-teal-700 transition-colors tracking-tight">{trip.name}</h3>
-                
-                <div className="flex flex-col gap-3 text-slate-600 font-medium">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center">
-                      <MapPin size={16} className="text-teal-500" />
+                <div className="relative z-10">
+                  <div className="mb-6 flex items-start justify-between">
+                    <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-3 shadow-sm transition-transform group-hover:scale-105">
+                      <Plane size={24} className="text-violet-300" />
                     </div>
-                    <span className="text-sm">{trip.destination}</span>
+                    <Badge variant="lime">Open</Badge>
                   </div>
-                  {trip.start_date && (
+
+                  <h3 className="mb-2 text-2xl font-black tracking-[-0.04em] text-white transition-colors group-hover:text-lime-300">
+                    {trip.name}
+                  </h3>
+
+                  <div className="flex flex-col gap-3 font-medium text-white/60">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center">
-                        <Calendar size={16} className="text-teal-500" />
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.06]">
+                        <MapPin size={16} className="text-lime-300" />
                       </div>
-                      <span className="text-sm">
-                        {new Date(trip.start_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                        {trip.end_date ? ` - ${new Date(trip.end_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}` : ''}
-                      </span>
+                      <span className="text-sm">{trip.destination}</span>
                     </div>
-                  )}
-                </div>
 
-                <div className="mt-8 flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-widest text-teal-600/60 bg-teal-50/50 px-3 py-1 rounded-full border border-teal-100/50">View Trip</span>
-                  <div className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center text-white scale-0 group-hover:scale-100 transition-transform duration-300">
-                     <ArrowRight size={18} />
+                    {trip.start_date ? (
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.06]">
+                          <Calendar size={16} className="text-violet-300" />
+                        </div>
+                        <span className="text-sm">
+                          {new Date(trip.start_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                          {trip.end_date
+                            ? ` - ${new Date(trip.end_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`
+                            : ''}
+                        </span>
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <div className="mt-8 flex items-center justify-between">
+                    <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-bold uppercase tracking-widest text-white/50">
+                      View Trip
+                    </span>
+                    <div className="flex h-10 w-10 scale-0 items-center justify-center rounded-full bg-lime-300 text-black transition-transform duration-300 group-hover:scale-100">
+                      <ArrowRight size={18} />
+                    </div>
                   </div>
                 </div>
-              </div>
+              </Card>
             </Link>
           ))}
         </div>

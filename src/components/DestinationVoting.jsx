@@ -1,61 +1,60 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { ThumbsUp, Plus, Trophy, Vote, CheckCircle2 } from 'lucide-react';
+import { ThumbsUp, Plus, Trophy, Vote } from 'lucide-react';
+import Card from './ui/Card';
+import Button from './ui/Button';
+import Badge from './ui/Badge';
 
 function DestinationVoting({ tripId, members }) {
   const [votes, setVotes] = useState([]);
   const [newDestination, setNewDestination] = useState('');
   const [voterName, setVoterName] = useState(members?.[0]?.name || '');
   const [error, setError] = useState('');
+  const [animatedDestination, setAnimatedDestination] = useState('');
 
   useEffect(() => {
     fetchVotes();
   }, [tripId]);
 
+  useEffect(() => {
+    if (!animatedDestination) {
+      return undefined;
+    }
+
+    const timer = window.setTimeout(() => setAnimatedDestination(''), 450);
+    return () => window.clearTimeout(timer);
+  }, [animatedDestination]);
+
   const fetchVotes = async () => {
     try {
       const response = await axios.get(`http://localhost:3001/api/trips/${tripId}/votes`);
       setVotes(response.data);
-    } catch (error) {
-      console.error('Error fetching votes:', error);
+    } catch (requestError) {
+      console.error('Error fetching votes:', requestError);
+    }
+  };
+
+  const submitVote = async (destination) => {
+    try {
+      await axios.post(`http://localhost:3001/api/trips/${tripId}/votes`, {
+        destination,
+        member_name: voterName,
+      });
+      setAnimatedDestination(destination);
+      setError('');
+      if (newDestination === destination) {
+        setNewDestination('');
+      }
+      fetchVotes();
+    } catch (requestError) {
+      setError(requestError.response?.data?.error || 'Error casting vote.');
     }
   };
 
   const handleVote = async (e) => {
     e.preventDefault();
     if (!newDestination || !voterName) return;
-
-    try {
-      await axios.post(`http://localhost:3001/api/trips/${tripId}/votes`, {
-        destination: newDestination,
-        member_name: voterName
-      });
-      setNewDestination('');
-      setError('');
-      fetchVotes();
-    } catch (error) {
-      setError(error.response?.data?.error || 'Failed to cast vote');
-      setTimeout(() => setError(''), 3000);
-    }
-  };
-
-  const castExistingVote = async (destination) => {
-    if (!voterName) return;
-    try {
-      await axios.post(`http://localhost:3001/api/trips/${tripId}/votes`, {
-        destination,
-        member_name: voterName
-      });
-      setError('');
-      fetchVotes();
-    } catch (error) {
-      setError(error.response?.data?.error || 'Already voted for this');
-      setTimeout(() => setError(''), 3000);
-    }
-  };
-
-  const hasVotedFor = (destination) => {
-    return votes.some(v => v.destination === destination && v.member_name === voterName);
+    submitVote(newDestination.trim());
   };
 
   const voteCounts = votes.reduce((acc, vote) => {
@@ -63,148 +62,141 @@ function DestinationVoting({ tripId, members }) {
     return acc;
   }, {});
 
+  const votesByVoter = votes.reduce((acc, vote) => {
+    if (!acc[vote.member_name]) {
+      acc[vote.member_name] = new Set();
+    }
+    acc[vote.member_name].add(vote.destination);
+    return acc;
+  }, {});
+
   const destinations = Object.keys(voteCounts).sort((a, b) => voteCounts[b] - voteCounts[a]);
   const maxVotes = Math.max(...Object.values(voteCounts), 0);
+  const selectedVotes = votesByVoter[voterName] ?? new Set();
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {error && (
-        <div className="fixed top-20 right-4 z-[100] bg-red-600 text-white px-6 py-3 rounded-2xl shadow-2xl animate-bounce flex items-center gap-2">
-          <CheckCircle2 size={20} />
-          {error}
-        </div>
-      )}
-
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-gray-100 pb-8">
-        <div className="space-y-1">
-          <h3 className="text-2xl font-black text-slate-900 flex items-center gap-3">
-            <div className="p-2 bg-teal-100 rounded-lg">
-              <Vote className="text-teal-600" size={24} />
-            </div>
-            Where to next?
-          </h3>
-          <p className="text-slate-500 font-medium">Cast your vote for the next destination</p>
-        </div>
-        
-        <div className="flex items-center gap-4 bg-white p-2 pl-5 rounded-2xl shadow-sm border border-slate-100">
-           <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Voting as</label>
-           <select 
-             value={voterName} 
-             onChange={(e) => setVoterName(e.target.value)}
-             className="bg-slate-50 text-teal-700 font-bold py-2 px-4 rounded-xl outline-none cursor-pointer hover:bg-teal-50 transition-colors border-none ring-0"
-           >
-             {members?.map(m => <option key={m.id} value={m.name}>{m.name}</option>)}
-           </select>
-        </div>
-      </div>
-
-      <div className="grid lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1 space-y-6">
-          <div className="bg-slate-900 p-8 rounded-[2rem] text-white shadow-xl relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-teal-500/20 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-teal-500/40 transition-all duration-700"></div>
-            <h4 className="text-lg font-bold mb-6 relative z-10">Propose New</h4>
-            <form onSubmit={handleVote} className="space-y-4 relative z-10">
-              <input 
-                type="text" 
-                placeholder="Ex: Tokyo, Japan" 
-                value={newDestination}
-                onChange={(e) => setNewDestination(e.target.value)}
-                className="w-full bg-white/10 border border-white/20 rounded-2xl px-5 py-4 text-white placeholder:text-white/40 focus:bg-white/20 focus:ring-2 focus:ring-teal-500 outline-none transition-all"
-              />
-              <button 
-                type="submit"
-                className="w-full bg-teal-500 hover:bg-teal-400 text-slate-900 font-black py-4 rounded-2xl transition-all transform active:scale-95 flex items-center justify-center gap-2"
-              >
-                <Plus size={20} />
-                Add Proposal
-              </button>
-            </form>
+    <div className="space-y-8 animate-fadeIn">
+      <Card variant="glass" className="p-8">
+        <div className="flex flex-col gap-6 border-b border-white/10 pb-8 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-2">
+            <p className="eyebrow">Destination Voting</p>
+            <h3 className="flex items-center gap-3 text-3xl font-black tracking-[-0.04em] text-white">
+              <Vote className="text-violet-300" />
+              Destination Voting
+            </h3>
+            <p className="section-copy">Propose destinations, vote fast, and spot consensus at a glance.</p>
           </div>
 
-          {destinations.length > 0 && (
-            <div className="bg-teal-50 p-8 rounded-[2rem] border-2 border-teal-100">
-              <h4 className="font-black text-teal-900 mb-4 flex items-center gap-2 uppercase tracking-tighter">
-                 <Trophy size={20} className="text-teal-600" />
-                 Top Pick
-              </h4>
-              <div className="space-y-1">
-                <p className="text-3xl font-black text-teal-900 leading-none">{destinations[0]}</p>
-                <p className="text-teal-600 font-bold">{voteCounts[destinations[0]]} votes so far</p>
-              </div>
-            </div>
-          )}
+          <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3">
+            <label className="whitespace-nowrap text-xs font-black uppercase tracking-[0.24em] text-white/45">Voting as</label>
+            <select
+              value={voterName}
+              onChange={(e) => setVoterName(e.target.value)}
+              className="cursor-pointer bg-transparent font-medium text-lime-300 outline-none focus:ring-0"
+            >
+              {members?.map((member) => (
+                <option key={member.id} value={member.name}>
+                  {member.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
-        <div className="lg:col-span-2">
-          <div className="grid md:grid-cols-2 gap-4">
-            {destinations.map(dest => {
-              const voted = hasVotedFor(dest);
-              const isWinner = voteCounts[dest] === maxVotes && maxVotes > 0;
-              
-              return (
-                <div 
-                  key={dest} 
-                  className={`group relative p-6 rounded-[2rem] border-4 transition-all duration-300 ${
-                    voted 
-                    ? 'bg-lime-50 border-lime-400 shadow-lg shadow-lime-100' 
-                    : 'bg-white border-transparent shadow-sm hover:shadow-md hover:border-slate-100'
+        {error ? (
+          <div className="mt-6 rounded-2xl border border-rose-300/20 bg-rose-300/10 px-4 py-3 text-sm text-rose-200">{error}</div>
+        ) : null}
+
+        <div className="mt-8 grid gap-8 md:grid-cols-2">
+          <div className="space-y-4">
+            <div>
+              <p className="eyebrow">Propose</p>
+              <h4 className="mt-2 text-xl font-black tracking-[-0.03em] text-white">Pitch a destination</h4>
+            </div>
+
+            <form onSubmit={handleVote} className="space-y-3">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Enter destination name..."
+                  value={newDestination}
+                  onChange={(e) => setNewDestination(e.target.value)}
+                  className="w-full rounded-2xl border border-white/10 bg-white/[0.05] py-4 pl-4 pr-14 outline-none transition focus:border-violet-400/50"
+                />
+                <Button type="submit" className="absolute bottom-2 right-2 top-2 rounded-xl px-3">
+                  <Plus size={20} />
+                </Button>
+              </div>
+            </form>
+
+            <Card className="rounded-[24px] border-white/8 bg-white/[0.03] p-6">
+              <h4 className="mb-4 flex items-center gap-2 font-bold text-white">
+                <Trophy size={18} className="text-amber-300" />
+                Current Winner
+              </h4>
+              {destinations.length > 0 ? (
+                <div className="rounded-2xl border border-lime-300/20 bg-lime-300/10 p-4">
+                  <p className="text-xl font-black text-white">{destinations[0]}</p>
+                  <p className="mt-1 text-sm font-bold uppercase tracking-wider text-lime-300">{voteCounts[destinations[0]]} Votes</p>
+                </div>
+              ) : (
+                <p className="text-sm italic text-white/45">No proposals yet. Be the first.</p>
+              )}
+            </Card>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <p className="eyebrow">All Proposals</p>
+              <h4 className="mt-2 text-xl font-black tracking-[-0.03em] text-white">Vote on the board</h4>
+            </div>
+
+            <div className="max-h-[430px] space-y-3 overflow-y-auto pr-2">
+              {destinations.map((destination) => (
+                <Card
+                  key={destination}
+                  className={`flex items-center justify-between p-5 transition-all ${
+                    selectedVotes.has(destination)
+                      ? 'border-lime-300/45 shadow-[0_0_0_1px_rgba(190,242,100,0.35)]'
+                      : voteCounts[destination] === maxVotes && maxVotes > 0
+                        ? 'border-violet-400/35'
+                        : 'border-white/10'
                   }`}
                 >
-                  <div className="flex justify-between items-start mb-6">
-                    <div className="space-y-1">
-                       <h5 className="text-xl font-black text-slate-900 group-hover:text-teal-600 transition-colors">{dest}</h5>
-                       <div className="flex gap-1">
-                          {Array.from({ length: voteCounts[dest] }).map((_, i) => (
-                            <div key={i} className="w-2 h-2 rounded-full bg-teal-500 animate-in zoom-in duration-300" />
-                          ))}
-                       </div>
+                  <div>
+                    <div className="flex items-center gap-3">
+                      <span className="font-bold text-white">{destination}</span>
+                      {selectedVotes.has(destination) ? <Badge variant="lime">Voted</Badge> : null}
                     </div>
-                    {voted && (
-                      <div className="bg-lime-400 text-white p-1.5 rounded-full">
-                        <CheckCircle2 size={16} />
-                      </div>
-                    )}
+                    <div className="mt-2 flex gap-1">
+                      {Array.from({ length: voteCounts[destination] }).map((_, index) => (
+                        <div key={index} className="h-1.5 w-1.5 rounded-full bg-violet-400" />
+                      ))}
+                    </div>
                   </div>
 
-                  <div className="flex items-center justify-between mt-auto">
-                    <div className="flex flex-col">
-                      <span className="text-3xl font-black text-slate-900 transition-all group-hover:scale-110 origin-left">
-                        {voteCounts[dest]}
-                      </span>
-                      <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Votes</span>
-                    </div>
-
-                    <button 
-                      onClick={() => castExistingVote(dest)}
-                      disabled={voted}
-                      className={`p-4 rounded-2xl transition-all transform active:scale-90 ${
-                        voted 
-                        ? 'bg-lime-100 text-lime-600 cursor-default' 
-                        : 'bg-slate-100 text-slate-400 group-hover:bg-teal-600 group-hover:text-white group-hover:rotate-12'
-                      }`}
+                  <div className="flex items-center gap-4">
+                    <span className={`text-lg font-black text-lime-300 ${animatedDestination === destination ? 'animate-vote-pop' : ''}`}>
+                      {voteCounts[destination]}
+                    </span>
+                    <Button
+                      onClick={() => submitVote(destination)}
+                      variant={selectedVotes.has(destination) ? 'success' : 'secondary'}
+                      className="p-3"
                     >
-                      <ThumbsUp size={24} fill={voted ? "currentColor" : "none"} />
-                    </button>
+                      <ThumbsUp size={18} />
+                    </Button>
                   </div>
+                </Card>
+              ))}
 
-                  {isWinner && (
-                    <div className="absolute -top-3 -right-3 bg-yellow-400 text-white p-2 rounded-xl shadow-lg rotate-12">
-                      <Trophy size={16} />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {destinations.length === 0 && (
-            <div className="h-64 flex flex-col items-center justify-center text-slate-400 border-4 border-dashed border-slate-100 rounded-[3rem]">
-              <Vote size={48} className="mb-4 opacity-20" />
-              <p className="font-bold">No proposals yet. Start the movement!</p>
+              {destinations.length === 0 ? (
+                <Card className="border-dashed py-10 text-center text-white/40">No destinations proposed yet.</Card>
+              ) : null}
             </div>
-          )}
+          </div>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

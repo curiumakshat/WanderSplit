@@ -21,7 +21,18 @@ export default {
           950: '#042f2e',
         },
       },
+      keyframes: {
+        'scale-102': {
+          '0%, 100%': { transform: 'scale(1)' },
+          '50%': { transform: 'scale(1.02)' }
+        }
+      },
+      animation: {
+        'scale-102': 'scale-102 200ms ease-in-out'
+      }
     },
   },
   plugins: [],
+  darkMode: 'class'
 }
+

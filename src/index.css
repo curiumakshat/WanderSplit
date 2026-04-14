@@ -200,3 +200,23 @@
   animation-iteration-count: infinite;
 }
 
+/* Select dropdown styling for visibility */
+select {
+  color-scheme: dark;
+}
+
+select option {
+  background-color: #0f172a;
+  color: #ffffff;
+  padding: 8px;
+}
+
+select option:hover {
+  background-color: #1e293b;
+  color: #c6ff33;
+}
+
+select option:checked {
+  background-color: #7d39eb;
+  color: #ffffff;
+}

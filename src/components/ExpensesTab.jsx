@@ -28,14 +28,19 @@ const ExpensesTab = ({ tripId }) => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const membersRes = await fetch(`http://localhost:3001/api/trips/${tripId}/members`);
-      if (membersRes.ok) {
-        const membersData = await membersRes.json();
-        setMembers(membersData);
+      // Fetch trip details which includes members
+      const tripRes = await fetch(`http://localhost:3001/api/trips/${tripId}`);
+      if (tripRes.ok) {
+        const tripData = await tripRes.json();
+        console.log('Trip data:', tripData);
+        const tripMembers = tripData.members || [];
+        setMembers(tripMembers);
         setFormData((prev) => ({
           ...prev,
-          split_with: membersData.map((member) => member.id),
+          split_with: tripMembers.map((member) => member.id),
         }));
+      } else {
+        console.error('Failed to fetch trip:', tripRes.status);
       }
 
       const expensesRes = await fetch(`http://localhost:3001/api/trips/${tripId}/expenses`);
@@ -51,7 +56,7 @@ const ExpensesTab = ({ tripId }) => {
       }
     } catch (err) {
       setError('Failed to load data');
-      console.error(err);
+      console.error('Fetch error:', err);
     } finally {
       setLoading(false);
     }
@@ -191,13 +196,20 @@ const ExpensesTab = ({ tripId }) => {
             <div>
               <label className="mb-2 block text-sm font-semibold text-white/70">Paid By *</label>
               <select name="paid_by" value={formData.paid_by} onChange={handleFormChange} className={inputClass} required>
-                <option value="">Select member</option>
-                {members.map((member) => (
-                  <option key={member.id} value={member.id}>
-                    {member.name}
-                  </option>
-                ))}
+                <option value="" className="bg-slate-900 text-white">Select who paid</option>
+                {members && members.length > 0 ? (
+                  members.map((member) => (
+                    <option key={member.id} value={member.id} className="bg-slate-900 text-white">
+                      {member.name}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled className="bg-slate-900 text-white">No members available</option>
+                )}
               </select>
+              {members.length === 0 && (
+                <p className="mt-2 text-xs text-red-400">⚠️ No members found. Please refresh the page.</p>
+              )}
             </div>
 
             <div>

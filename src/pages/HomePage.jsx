@@ -5,6 +5,7 @@ import { PlusCircle, MapPin, Calendar, Plane, ArrowRight } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
+import BrandLogo from '../components/ui/BrandLogo';
 
 function HomePage() {
   const [trips, setTrips] = useState([]);
@@ -29,8 +30,13 @@ function HomePage() {
       <Card variant="gradient" className="overflow-hidden p-8 md:p-10">
         <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
           <div className="max-w-2xl space-y-4">
-            <p className="eyebrow">Travel Control Room</p>
-            <h2 className="section-title">Plan trips, vote fast, split cleanly.</h2>
+            <div className="flex items-center gap-4">
+              <BrandLogo size="md" className="shrink-0" />
+              <div>
+                <p className="eyebrow">Travel Control Room</p>
+                <h2 className="section-title">Plan trips, vote fast, split cleanly.</h2>
+              </div>
+            </div>
             <p className="section-copy">
               WanderSplit keeps itinerary decisions, group expenses, and final settlements in one polished flow.
             </p>

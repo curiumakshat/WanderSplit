@@ -3,6 +3,8 @@ import { useParams, Routes, Route, Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { MapPin, Calendar, Users, LayoutDashboard, Map, Wallet, Scale } from 'lucide-react';
 import DestinationVoting from '../components/DestinationVoting';
+import ItineraryTab from '../components/ItineraryTab';
+import ExpensesTab from '../components/ExpensesTab';
 
 function TripDashboard() {
   const { id } = useParams();
@@ -103,8 +105,8 @@ function TripDashboard() {
           <Routes>
             <Route index element={<DestinationVoting tripId={id} members={trip.members} />} />
             <Route path="plan" element={<DestinationVoting tripId={id} members={trip.members} />} />
-            <Route path="itinerary" element={<div className="text-center py-20 text-gray-400 font-medium italic">Itinerary content coming soon...</div>} />
-            <Route path="expenses" element={<div className="text-center py-20 text-gray-400 font-medium italic">Expenses content coming soon...</div>} />
+            <Route path="itinerary" element={<ItineraryTab tripId={trip.id} destination={trip.destination} />} />
+            <Route path="expenses" element={<ExpensesTab tripId={id} />} />
             <Route path="settle" element={<div className="text-center py-20 text-gray-400 font-medium italic">Settle content coming soon...</div>} />
           </Routes>
         </div>

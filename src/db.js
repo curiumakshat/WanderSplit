@@ -34,6 +34,14 @@ db.exec(`
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (trip_id) REFERENCES trips (id) ON DELETE CASCADE
   );
+
+  CREATE TABLE IF NOT EXISTS itineraries (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    trip_id INTEGER NOT NULL,
+    content_json TEXT NOT NULL,
+    generated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (trip_id) REFERENCES trips (id) ON DELETE CASCADE
+  );
 `);
 
 export default db;

@@ -5,13 +5,13 @@ import TripDashboard from './pages/TripDashboard';
 
 function App() {
   return (
-    <div className="min-h-screen">
-      <nav className="bg-teal-600 text-white p-4 shadow-md">
-        <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold tracking-tight">WanderSplit</h1>
+    <div className="min-h-screen bg-stone-100">
+      <nav className="border-b border-amber-100 bg-gradient-to-r from-amber-700 via-amber-600 to-orange-500 text-amber-50 shadow-lg shadow-amber-900/10">
+        <div className="container mx-auto flex items-center justify-between px-4 py-4">
+          <h1 className="text-2xl font-black tracking-tight">WanderSplit</h1>
         </div>
       </nav>
-      <main className="container mx-auto py-8 px-4">
+      <main className="container mx-auto px-4 py-8">
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/create" element={<CreateTripPage />} />
